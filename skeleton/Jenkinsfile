@@ -1,0 +1,11 @@
+@Library("global-pipeline@v19") _
+def jobParameters = [
+    "appName":"${{values.component_id}}",
+    "projectType": "maven",
+    "excludeEnv": ['QA'],
+    "manifestPath" : ["git@gitlab.com:estes-express/app-gitops/application-manifests/${{values.component_id}}.git"],
+    "baseImage" : "openjdk-base-image" ,
+    "baseImageTag" : "v1.3.0",
+    "secretVersion": "1"
+]
+OpenshiftMergePipeline(jobParameters)
