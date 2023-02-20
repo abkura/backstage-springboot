@@ -2,16 +2,18 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   name: springboot-template
-  title: Spring Boot Template
-  description: Create a microservice using Spring Boot
+  title: Spring Boot gRPC Service
+  description: Create a simple microservice using gRPC and Spring Boot Java
   tags:
+    - recommended
     - java
+    - grpc
 spec:
   owner: service@example.com
   type: service
 
   parameters:
-    - title: Provide project setup information
+    - title: Provide some simple information
       required:
         - component_id
         - owner
@@ -20,29 +22,16 @@ spec:
         component_id:
           title: Name
           type: string
-          description: Unique name of the component. eg(petstore-api)
+          description: Unique name of the component
           ui:field: EntityNamePicker
         java_package_name:
           title: Java Package Name
           type: string
-          description: Name for the java package. eg (petstore)
+          description: Name for the java package. eg (io.backstage.blah)
         description:
           title: Description
           type: string
-          description: Help others understand what this application is for.
-        owner:
-          title: Owner
-          type: string
-          description: Owner of the component
-          ui:field: OwnerPicker
-          ui:options:
-            allowedKinds:
-              - Group
-        entity:
-          title: Entity
-          type: string
-          description: Owner of the component
-          ui:field: EntityPicker    
+          description: Help others understand what this website is for.
     - title: Choose a location
       required:
         - repoUrl
@@ -53,50 +42,31 @@ spec:
           ui:field: RepoUrlPicker
           ui:options:
             allowedHosts:
-              - gitlab.com
+              - github.com
 
   steps:
     - id: template
       name: Fetch Skeleton + Template
       action: fetch:template
       input:
-        url: ./skeleton	
+        url: ./skeleton
+        copyWithoutRender:
+          - .github/workflows/*
         values:
           component_id: ${{ parameters.component_id }}
           description: ${{ parameters.description }}
           artifact_id: ${{ parameters.component_id }}
           java_package_name: ${{ parameters.java_package_name }}
-          owner: ${{ parameters.owner }}
           destination: ${{ parameters.repoUrl | parseRepoUrl }}
           http_port: 8080
-    
-    - id: check_gitlab_group
-      name: Check Gitlab Group
-      action: http:backstage:request
-      input:
-        method: 'GET'
-        path: '/api/proxy/gitlab/groups?search=estes-express/app-dev/${{ (parameters.repoUrl | parseRepoUrl).owner }}'
-        
-    - id: create_gitlab_group
-      name: Create Gitlab Group
-      if: ${{ steps.check_gitlab_group.output.body.length == 0 }}
-      action: http:backstage:request
-      input:
-       method: 'POST'
-       path: '/api/proxy/gitlab/groups?parent_id=4709263'
-       headers:
-         content-type: 'application/json'
-       body:
-         name: ${{ (parameters.repoUrl | parseRepoUrl).owner }}
-         path: ${{ (parameters.repoUrl | parseRepoUrl).owner }}
 
     - id: publish
       name: Publish
-      action: publish:gitlab
+      action: publish:github
       input:
-        allowedHosts: ["gitlab.com"]
+        allowedHosts: ["github.com"]
         description: This is ${{ parameters.component_id }}
-        repoUrl: ${{ 'gitlab.com?owner=estes-express/app-dev/'+ (parameters.repoUrl | parseRepoUrl).owner + '&repo=' + (parameters.repoUrl | parseRepoUrl).repo}}
+        repoUrl: ${{ parameters.repoUrl }}
 
     - id: register
       name: Register
